@@ -1,0 +1,11 @@
+﻿[project]
+name = "qrparser"
+version = "0.1.0"
+description = "Microservice for parsing QR codes from PDF files (no external web deps)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "NlightN22" }]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
