@@ -14,8 +14,11 @@ from qrparser.observability.logging import (
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware for structured request logging with request ID."""
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        request.state.request_id = req_id
         start = time.perf_counter()
 
         set_request_context(
@@ -23,7 +26,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             method=request.method,
             path=str(request.url.path),
         )
-        log_request_start(method=request.method, path=str(request.url.path), client=str(request.client))
+        log_request_start(
+            method=request.method,
+            path=str(request.url.path),
+            client=str(request.client),
+        )
 
         try:
             response: Response = await call_next(request)
