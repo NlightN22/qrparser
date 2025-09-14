@@ -1,5 +1,9 @@
+# comments in English only
+from __future__ import annotations
+
 from functools import lru_cache
 from typing import Literal, Optional
+
 from pydantic import AnyUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -38,12 +42,23 @@ class Settings(BaseSettings):
     CONCURRENCY: int = Field(
         default=4, ge=1, description="Worker threads/processes used for parsing."
     )
-    ALLOWED_MIME: tuple[str, ...] = Field(
+
+    # --- Accepted types (split by family) ---
+    ALLOWED_MIME_PDF: tuple[str, ...] = Field(
         default=("application/pdf",),
-        description="Accepted MIME types for upload/parse endpoint.",
+        description="Accepted MIME types for PDF uploads.",
     )
-    MAX_FILE_SIZE_MB: int = Field(
-        default=5, ge=1, description="Max input file size in megabytes."
+    ALLOWED_MIME_IMG: tuple[str, ...] = Field(
+        default=("image/png", "image/jpeg"),
+        description="Accepted MIME types for image uploads.",
+    )
+
+    # --- Size limits (split by family) ---
+    MAX_FILE_SIZE_MB_PDF: int = Field(
+        default=10, ge=1, description="Max PDF size in megabytes."
+    )
+    MAX_FILE_SIZE_MB_IMG: int = Field(
+        default=6, ge=1, description="Max image size in megabytes."
     )
 
     # --- HTTP service ---
@@ -74,6 +89,12 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    # --- Convenience computed views ---
+    @property
+    def ALL_ALLOWED_MIME(self) -> tuple[str, ...]:
+        """Union of PDF and image MIME lists."""
+        return tuple(self.ALLOWED_MIME_PDF) + tuple(self.ALLOWED_MIME_IMG)
 
 
 @lru_cache(maxsize=1)

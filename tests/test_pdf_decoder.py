@@ -16,7 +16,7 @@ def test_extract_from_pdf_smoke():
     The goal is to verify the pipeline works end-to-end and doesn't crash.
     """
     dec = PdfBarcodeDecoder(DecodeSettings(scale=3.5, fallback_scale=5.0))
-    vals = dec.extract_from_pdf(TEST_PDF)
+    vals = dec.extract_from_file(TEST_PDF)
 
     assert isinstance(vals, list)
     assert all(isinstance(v, str) for v in vals)

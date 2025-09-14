@@ -1,7 +1,9 @@
 from __future__ import annotations
 import uuid
 from fastapi import Header, Request
-from qrparser.core.pdf_decoder import PdfBarcodeDecoder, DecodeSettings
+from qrparser.core.pdf_decoder import PdfBarcodeDecoder
+from qrparser.core.image_decoder import ImageBarcodeDecoder
+from qrparser.core.composite_decoder import CompositeDecoder
 
 async def get_request_id(request: Request, x_request_id: str | None = Header(default=None)) -> str:
     """Return request-scoped Request ID from middleware, falling back to header/UUID."""
@@ -14,4 +16,4 @@ async def get_request_id(request: Request, x_request_id: str | None = Header(def
 
 def get_decoder() -> PdfBarcodeDecoder:
     """Provide a stateless decoder instance per request."""
-    return PdfBarcodeDecoder(DecodeSettings())
+    return CompositeDecoder(decoders=[PdfBarcodeDecoder(), ImageBarcodeDecoder()])

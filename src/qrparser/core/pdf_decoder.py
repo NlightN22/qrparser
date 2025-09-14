@@ -1,4 +1,4 @@
-# pdf_decoder.py
+# src/qrparser/core/pdf_decoder.py
 # Stateless PDF→image→barcode pipeline using pypdfium2 + zxing-cpp.
 
 from __future__ import annotations
@@ -22,6 +22,11 @@ class DecodeSettings:
 
 class PdfBarcodeDecoder:
     """Decode QR/DataMatrix/etc barcodes from a PDF file."""
+    
+    SUPPORTED = {"application/pdf"}
+    
+    def can_handle(self, mime: str) -> bool:
+        return mime in self.SUPPORTED
 
     def __init__(self, settings: DecodeSettings | None = None) -> None:
         self.settings = settings or DecodeSettings()
@@ -38,7 +43,7 @@ class PdfBarcodeDecoder:
         results = zxingcpp.read_barcodes(img_rgb)
         return [r.text for r in results if getattr(r, "text", None)]
 
-    def extract_from_pdf(self, pdf_path: Path | str) -> List[str]:
+    def extract_from_file(self, pdf_path: Path | str) -> List[str]:
         """Decode all barcodes from all pages. Returns texts in reading order."""
         pdf_path = Path(pdf_path)
         if not pdf_path.exists():
