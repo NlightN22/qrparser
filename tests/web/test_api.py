@@ -30,15 +30,52 @@ def test_redoc_served():
     assert "redoc" in resp.text.lower()
 
 
-def test_openapi_json():
+def test_openapi_basic_metadata():
     resp = client.get("/openapi.json")
     assert resp.status_code == 200
-    schema = resp.json()
-    # Minimal sanity checks
-    assert isinstance(schema, dict)
-    assert "openapi" in schema and re.match(r"^3\.", schema["openapi"])
-    assert "info" in schema and "title" in schema["info"]
-    assert "paths" in schema and "/health" in schema["paths"]
+    spec = resp.json()
+    assert isinstance(spec, dict)
+    assert re.match(r"^3\.", spec.get("openapi", ""))
+    assert spec.get("info", {}).get("title") == "QR Parser Service"
+
+def test_openapi_paths_exist():
+    spec = client.get("/openapi.json").json()
+    paths = spec.get("paths", {})
+    assert "/health" in paths
+    assert "/v1/parse" in paths
+
+def test_health_response_schema_ref():
+    spec = client.get("/openapi.json").json()
+    get_health = spec["paths"]["/health"]["get"]
+    ref = get_health["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert ref.endswith("/HealthResponse")
+
+def test_parse_request_and_responses():
+    spec = client.get("/openapi.json").json()
+    post_parse = spec["paths"]["/v1/parse"]["post"]
+
+    # request body: multipart with 'file' as binary
+    mf_schema = post_parse["requestBody"]["content"]["multipart/form-data"]["schema"]
+
+    def _resolve(schema):
+        # resolve single-level $ref if present
+        if "$ref" in schema:
+            ref = schema["$ref"]                       # e.g. "#/components/schemas/Body_parse_pdf_v1_parse_post"
+            name = ref.split("/")[-1]
+            return spec["components"]["schemas"][name]
+        return schema
+
+    resolved = _resolve(mf_schema)
+    props = resolved.get("properties", {})
+    assert "file" in props
+    assert props["file"]["type"] == "string"
+    assert props["file"]["format"] == "binary"
+
+    # responses: 200 -> ParseResponse, 400 -> ErrorResponse
+    ok_ref = post_parse["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    bad_ref = post_parse["responses"]["400"]["content"]["application/json"]["schema"]["$ref"]
+    assert ok_ref.endswith("/ParseResponse")
+    assert bad_ref.endswith("/ErrorResponse")
 
 
 def test_health_is_logged(caplog):

@@ -16,6 +16,7 @@ dependencies = [
   "pydantic-settings>=2.2,<3",
   "uvicorn[standard]>=0.30.0",
   "fastapi>=0.115.0",
+  "python-multipart>=0.0.9",
 ]
 
 description = "Stateless microservice for parsing QR codes from PDF"
