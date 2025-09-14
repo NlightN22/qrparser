@@ -1,0 +1,19 @@
+services:
+  qrparser:
+    image: oncharterliz/qrparser:0.1.0
+    environment:
+      QR_HTTP_WORKERS: "1"
+    ports:
+      - "8000:8000"
+
+    read_only: true
+    tmpfs:
+      - /tmp
+
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

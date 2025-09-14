@@ -19,7 +19,7 @@ dependencies = [
   "python-multipart>=0.0.9",
 ]
 
-description = "Stateless microservice for parsing QR codes from PDF"
+description = "Stateless microservice for parsing QR codes from PDF and image files."
 name = "qrparser"
 readme = "README.md"
 requires-python = ">=3.11"
