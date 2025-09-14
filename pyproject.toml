@@ -1,11 +1,23 @@
-﻿[project]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "qrparser"
 version = "0.1.0"
-description = "Microservice for parsing QR codes from PDF files (no external web deps)"
+description = "Stateless microservice for parsing QR codes from PDF"
+authors = [
+    { name = "NlightN22" }
+]
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "NlightN22" }]
+dependencies = [
+    "pypdfium2",
+    "pillow",
+    "numpy",
+    "zxing-cpp"
+]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-q"
