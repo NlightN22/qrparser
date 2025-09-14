@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from qrparser.observability.logging import setup_logging, get_logger
-from . import routes
+from .routers import api_router
 from .middleware import RequestLoggingMiddleware
 
 
@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestLoggingMiddleware)
 
     # include routes
-    app.include_router(routes.router)
+    app.include_router(api_router)
 
     return app
 
