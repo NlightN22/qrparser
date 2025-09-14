@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         description="Accepted MIME types for upload/parse endpoint.",
     )
     MAX_FILE_SIZE_MB: int = Field(
-        default=50, ge=1, description="Max input file size in megabytes."
+        default=5, ge=1, description="Max input file size in megabytes."
     )
 
     # --- HTTP service ---

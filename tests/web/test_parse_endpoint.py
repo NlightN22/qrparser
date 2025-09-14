@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from qrparser.web.main import create_app
 from qrparser.web.dependencies import get_decoder
+from qrparser.config.settings import reset_settings_cache 
 
 
 class FakeDecoderOK:
@@ -76,3 +77,40 @@ def test_parse_handles_decoder_failure_as_400(tmp_path):
 
     assert resp.status_code == 400
     assert resp.json()["detail"] in {"Invalid or unreadable PDF", "Invalid PDF"}
+
+
+def test_parse_rejects_file_too_large(monkeypatch):
+    # Set max size to 1 MB for this test
+    monkeypatch.setenv("QR_MAX_FILE_SIZE_MB", "1")
+    reset_settings_cache()  # must be before app/client creation
+
+    client = make_client(FakeDecoderOK())
+
+    # Build a fake PDF just over 1 MB
+    content = b"%PDF-1.7\n" + b"0" * (1 * 1024 * 1024 + 1)
+    files = {"file": ("big.pdf", content, "application/pdf")}
+
+    resp = client.post("/v1/parse", files=files)
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "File too large. Max size is 1 MB"
+
+
+def test_parse_allows_file_at_size_limit(monkeypatch):
+    # Set max size to 1 MB
+    monkeypatch.setenv("QR_MAX_FILE_SIZE_MB", "1")
+    reset_settings_cache()  # must be before app/client creation
+
+    client = make_client(FakeDecoderOK())
+
+    # Build a fake PDF just under the 1 MB limit
+    content = b"%PDF-1.7\n" + b"0" * (1 * 1024 * 1024 - 10)
+    files = {"file": ("ok.pdf", content, "application/pdf")}
+
+    resp = client.post("/v1/parse", files=files)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    # basic sanity checks
+    assert resp.headers.get("X-Request-ID")
+    assert "codes" in body
