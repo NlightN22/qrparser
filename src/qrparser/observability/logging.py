@@ -24,35 +24,55 @@ def _make_stream_handler() -> logging.Handler:
 
 def setup_logging() -> None:
     """
-    Инициализация один раз при старте приложения.
-    Делает bridge: stdlib logging -> structlog, JSON-вывод, UTC-время.
+    Configure stdlib logging to flow through structlog, so that *all* logs
+    (including uvicorn) are rendered in the same JSON/text format.
     """
     root = logging.getLogger()
     root.handlers[:] = []
     root.setLevel(_LEVEL)
-    h = _make_stream_handler()
-    h.setFormatter(logging.Formatter("%(message)s"))
-    root.addHandler(h)
 
-    processors = [
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.TimeStamper(fmt="iso", utc=True),
-    ]
+    # Choose output stream/handler (stdout|stderr|file)
+    handler = _make_stream_handler()
 
+    # Renderer for stdlib logs (must match structlog's renderer)
     if LOG_FORMAT == "text":
-        processors.append(structlog.dev.ConsoleRenderer())
+        renderer = structlog.dev.ConsoleRenderer()
     else:
-        processors.append(structlog.processors.JSONRenderer(ensure_ascii=False))
+        renderer = structlog.processors.JSONRenderer(ensure_ascii=False)
 
+    # ProcessorFormatter will run on stdlib log records
+    formatter = structlog.stdlib.ProcessorFormatter(
+        processor=renderer,
+        foreign_pre_chain=[
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso", utc=True),
+        ],
+    )
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
+    # Configure structlog so that its events are handed off to ProcessorFormatter
     structlog.configure(
-        processors=processors,
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.TimeStamper(fmt="iso", utc=True),
+            # Hand off to logging's ProcessorFormatter:
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
+
+    # Let uvicorn loggers propagate to root so they get our formatter
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access", "uvicorn.asgi", "uvicorn.lifespan"):
+        lg = logging.getLogger(name)
+        lg.handlers = []         # no own handlers
+        lg.propagate = True      # bubble up to root
+        lg.setLevel(_LEVEL)
 
 def get_logger(name: Optional[str] = None) -> structlog.stdlib.BoundLogger:
     return structlog.get_logger(name or "qrparser")
