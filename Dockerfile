@@ -50,5 +50,4 @@ RUN chmod +x /usr/local/bin/healthcheck.py
 USER appuser
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD python /usr/local/bin/healthcheck.py
-ENV QR_HTTP_WORKERS=2 QR_HTTP_HOST=0.0.0.0 QR_HTTP_PORT=8000 QR_LOG_LEVEL=INFO
 CMD ["python", "-m", "qrparser.web.serve"]

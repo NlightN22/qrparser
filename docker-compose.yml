@@ -11,7 +11,7 @@ services:
       - /tmp
 
     healthcheck:
-      test: ["CMD", "python", "/app/scripts/healthcheck.py"]
+      test: ["CMD", "python", "/usr/local/bin/healthcheck.py"]
       interval: 30s
       timeout: 5s
       retries: 3
