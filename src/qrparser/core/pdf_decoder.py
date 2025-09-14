@@ -1,6 +1,5 @@
 # pdf_decoder.py
 # Stateless PDF→image→barcode pipeline using pypdfium2 + zxing-cpp.
-# English-only comments inside source.
 
 from __future__ import annotations
 

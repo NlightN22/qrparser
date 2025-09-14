@@ -15,9 +15,11 @@ dependencies = [
     "pypdfium2",
     "pillow",
     "numpy",
-    "zxing-cpp"
+    "zxing-cpp",
+    "structlog>=24.1.0"
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "-q"
